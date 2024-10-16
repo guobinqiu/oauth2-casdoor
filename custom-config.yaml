@@ -1,0 +1,176 @@
+version: v2.13.0-beta.0.50-20240927163100-9fe626038ba6
+###v2.12.0-beta.2.407-20240923110101-1b4a86499f4e
+  
+repo:
+  - name: brain
+    url: localhost:5000/packages
+    oci: "yes"
+  
+packages:
+  - name: local-path-provisioner
+    enabled: "yes"
+  - name: cert-manager
+    enabled: "yes"
+  - name: kserve
+    enabled: "yes"
+  - name: gloo-ais
+    enabled: "yes"
+    set:
+      discovery.enabled: true
+  - name: nvidia-device-plugin
+    enabled: "yes"
+  - name: nori
+    enabled: "yes"
+  - name: clickhouse
+    enabled: "yes"
+    version: v2.11.0-alpha.1.7-20240111140231-76c929199caa
+  - name: mysql
+    enabled: "yes"
+  - name: monitoring
+    enabled: "yes"
+  - name: argo
+    enabled: 'yes'
+  - name: loki
+    enabled: "yes"
+  - name: minio
+    enabled: "yes"
+    version: v2.11.0-alpha.1.7-20240111140231-76c929199caa
+  - name: ais-mongo
+    enabled: "yes"
+    version: v2.11.0-alpha.1.7-20240111140231-76c929199caa
+  - name: ais-etcd
+    enabled: "yes"
+    version: v2.11.0-alpha.1.7-20240111140231-76c929199caa
+  - name: redis
+    enabled: "yes"
+  - name: aiservice
+    enabled: "yes"
+    set:
+      aiservice.tls.alidns.enable: false
+      aiservice.tls.selfsigned: true
+      aiservice.services.casdoor.deployment.replicas: 0
+      aiservice.services.exporter.hostname: ai-openplatform-master-02-0911264
+      aiservice.global.uiConfig.businessPageConfig.title: "AI训练中心"
+      aiservice.global.uiConfig.adminPageConfig.title: "AI训练中心运营端"
+      aiservice.services.authServer.banUserInit: false
+tmpl:
+  ais-etcd:
+    resourceName: ais-etcd
+    nodeAffinityEnabled: true
+  gloo-ais:
+    useHostPort: true
+  clickhouse:
+    createLogContainer: false
+  aiservice:
+    image:
+      tag: v2.13.0-beta.0.50-20240927163100-9fe626038ba6
+      #tag: v2.13.0-beta.0.48-20240927133610-7e7fd52f17c0   
+    domain: ai-open-studio.ctseelink.cn
+    gloo:
+      authDomain: ai-open-studio-authing.ctseelink.cn
+      adminDomain: ai-open-studio-admin.ctseelink.cn
+      ossProxyDomain: ai-open-studio-ossproxy.ctseelink.cn
+      useHttp: false
+    proxyRegistry: ai-open-studio-private-registry.ctseelink.cn
+    featureGates:
+      multiSite: false
+    ignoreCheckAndInstall:
+      speedFile: false
+    mongo: # 与mongo安装时一致
+      aisEvalDB:
+        rootPass: "FRk10uiO2s8fkL3Q"
+        rootUser: "admin"
+        replicaSet: inner_mongodb
+        helperPod:
+          name: mongo-ais-eval-ai-openplatform-master-01-0911356
+        endpoints:
+          - 192.168.58.183:27001
+          - 192.168.50.203:27001
+          - 192.168.54.66:27001
+      commonDB:
+        rootPass: "FRk10uiO2s8fkL3Q"
+        rootUser: "admin"
+        replicaSet: inner_mongodb
+        helperPod:
+          name: mongo-ais-eval-ai-openplatform-master-01-0911356
+        endpoints:
+          - 192.168.58.183:27001
+          - 192.168.50.203:27001
+          - 192.168.54.66:27001
+    harbor:
+      endpoint: "https://aihub.tech.21cn.com"
+      username: "guxg1"
+      password: "dxgMdFv19xU#g1"
+    etcdClient:
+      configMap:
+        endpoint: ais-etcd-0.ais-etcd.aiservice-infra.svc.aiservice.local:2379,ais-etcd-1.ais-etcd.aiservice-infra.svc.aiservice.local:2379,ais-etcd-2.ais-etcd.aiservice-infra.svc.aiservice.local:2379
+    dependBucket: [testbucket]
+    datahubAPIServer:
+      deployment:
+        resources:
+          requests:
+            ephemeral_storage: "80Gi"
+      dataMasterJob:
+        resource:
+          ram: 16
+          cpu: 4
+      builtInDatasets:
+        - name: "分类数据集-花朵-训练集"
+          path: "s3://ais-algohub-resources/datasets/builtin/yindaotixi-clf-train.tar"
+        - name: "分类数据集-花朵-验证集"
+          path: "s3://ais-algohub-resources/datasets/builtin/yindaotixi-clf-val01.tar"
+        - name: "检测-多物体-训练集"
+          path: "s3://ais-algohub-resources/datasets/builtin/yindaotixi-det-train.tar"
+        - name: "检测-多物体-验证集"
+          path: "s3://ais-algohub-resources/datasets/builtin/yindaotixi-det-val01.tar"
+        
+  node-problem-detector:
+    withBip: false
+  nori:
+    etcdServers:
+      - ais-etcd-0.ais-etcd.aiservice-infra.svc.aiservice.local:2379
+      - ais-etcd-1.ais-etcd.aiservice-infra.svc.aiservice.local:2379
+      - ais-etcd-2.ais-etcd.aiservice-infra.svc.aiservice.local:2379
+    minVid: "0"
+    maxVid: "1048576"
+    noriRegistry: private-registry.brainpp.cn
+    noriChunk:
+      replicas:
+        - hostname: ai-openplatform-master-02-0911264
+          path: /data/nori-chunk-1
+          agent: hostname-1
+          capacity: 100Gi
+          name: nori-chunk-1
+        - hostname: ai-openplatform-master-03-0911247
+          path: /data/nori-chunk-2
+          agent: hostname-2
+          capacity: 100Gi
+          name: nori-chunk-2
+        - hostname: ai-openplatform-master-03-0911247
+          path: /data/nori-chunk-3
+          agent: hostname-3
+          capacity: 100Gi
+          name: nori-chunk-3
+  global:
+    registry: private-registry.brainpp.cn
+    s3: 
+      endpoint: http://minio.minio-tenant.svc
+    mongo: # 与mongo安装时一致
+      rootPass: "FRk10uiO2s8fkL3Q"
+      rootUser: "admin"
+      replicaSet: inner_mongodb
+      helperPod:
+        name: mongo-ais-eval-ai-openplatform-master-01-0911356
+      endpoints:
+        - 192.168.58.183:27001
+        - 192.168.50.203:27001
+        - 192.168.54.66:27001
+      dbs:
+        volume:
+          isNori: true
+        noriAssignment:
+          isNori: true
+        noriVolumeInfo:
+          isNori: true
+        noriSchedule:
+          isNori: true
